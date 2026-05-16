@@ -1,0 +1,20 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Amber SmartShift Status",
+        "description": "Select the battery type you want to monitor the status of.",
+        "data": {
+          "battery_type": "Battery Type"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Amber website, using default list.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This battery type is already configured"
+    }
+  }
+}
