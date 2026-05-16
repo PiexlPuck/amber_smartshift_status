@@ -21,7 +21,10 @@ async def async_setup_entry(
     battery_type = entry.data[CONF_BATTERY_TYPE]
 
     async_add_entities(
-        [AmberSmartShiftSensor(coordinator, battery_type, entry.entry_id)]
+        [
+            AmberSmartShiftSensor(coordinator, battery_type, entry.entry_id),
+            AmberSmartShiftMessageSensor(coordinator, battery_type, entry.entry_id)
+        ]
     )
 
 
@@ -83,3 +86,41 @@ class AmberSmartShiftSensor(CoordinatorEntity[AmberSmartShiftCoordinator], Senso
                 attributes["current_issue_identified"] = first_issue.get("first_identified")
 
         return attributes
+
+class AmberSmartShiftMessageSensor(CoordinatorEntity[AmberSmartShiftCoordinator], SensorEntity):
+    """Representation of a Amber SmartShift Error Message Sensor."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Error Details"
+    _attr_icon = "mdi:text-box-outline"
+
+    def __init__(
+        self,
+        coordinator: AmberSmartShiftCoordinator,
+        battery_type: str,
+        entry_id: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self.battery_type = battery_type
+        self._attr_unique_id = f"{entry_id}_{battery_type}_error_details"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry_id)},
+            "name": f"Amber SmartShift - {battery_type}",
+            "manufacturer": "Amber Electric",
+            "model": battery_type,
+        }
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the state of the sensor."""
+        data = self.coordinator.data or {}
+        battery_data = data.get(self.battery_type)
+        if battery_data and battery_data.get("active_issues"):
+            overview = battery_data["active_issues"][0].get("overview", "")
+            # Truncate to 255 characters, as Home Assistant states are limited to 255 chars
+            if len(overview) > 255:
+                return overview[:252] + "..."
+            return overview
+        return "No active issues"
+

@@ -52,8 +52,9 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
         # Keywords to ignore as battery names
         ignore_keywords = [
             "overview of issue", "impact", "first identified", "resolved", "last updated",
-            "active issues", "resolved issues", "current issues", "archived issues",
-            "about", "join us", "social", "comments", "fleet-wide", "user actions", "update"
+            "active issues", "current issues", "archived issues",
+            "about", "join us", "social", "comments", "user actions", "update",
+            "update 1", "update 2"
         ]
 
         for element in soup.find_all(['strong', 'h1', 'h2', 'h3', 'h4', 'p']):
@@ -62,6 +63,10 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
                 continue
                 
             lower_text = text.lower()
+            
+            # Break early if we hit the resolved or archived sections
+            if "resolved issues" in lower_text or "archived issues" in lower_text:
+                break
             
             # Check for issue fields
             if "overview of issue" in lower_text:
