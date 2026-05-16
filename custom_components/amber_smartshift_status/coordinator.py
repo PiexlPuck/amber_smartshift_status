@@ -77,40 +77,49 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
             if "overview of issue" in lower_text:
                 if current_battery:
                     # extract the actual text following this strong tag
-                    issue_text = text
+                    issue_text = ""
                     sibling = element.next_sibling
                     while sibling and getattr(sibling, 'name', '') not in ['strong', 'h1', 'h2', 'h3', 'h4']:
                         if isinstance(sibling, str):
-                            issue_text += " " + sibling.strip()
-                        elif sibling.name not in ['br', 'a']:
-                            issue_text += " " + sibling.get_text(strip=True)
+                            if sibling.strip():
+                                issue_text += " " + sibling.strip()
+                        elif sibling.name == 'br':
+                            issue_text += "\n"
+                        elif sibling.name != 'a':
+                            issue_text += " " + sibling.get_text(separator=' ', strip=True)
                         sibling = sibling.next_sibling
                         
-                    current_issue = {"status": "Issue", "overview": issue_text.strip()}
+                    import re
+                    clean_overview = re.sub(r' +', ' ', issue_text).strip()
+                    current_issue = {"status": "Issue", "overview": clean_overview}
                     data[current_battery]["issues"].append(current_issue)
                 continue
             elif current_issue and any(k in lower_text for k in ["impact:", "impact", "first identified:", "resolved", "updated:"]):
                 # extract text for these too
-                prop_text = text
+                prop_text = ""
                 sibling = element.next_sibling
                 while sibling and getattr(sibling, 'name', '') not in ['strong', 'h1', 'h2', 'h3', 'h4']:
                     if isinstance(sibling, str):
-                        prop_text += " " + sibling.strip()
-                    elif sibling.name not in ['br', 'a']:
-                        prop_text += " " + sibling.get_text(strip=True)
+                        if sibling.strip():
+                            prop_text += " " + sibling.strip()
+                    elif sibling.name == 'br':
+                        prop_text += "\n"
+                    elif sibling.name != 'a':
+                        prop_text += " " + sibling.get_text(separator=' ', strip=True)
                     sibling = sibling.next_sibling
                     
-                prop_text = prop_text.strip()
+                import re
+                clean_prop = re.sub(r' +', ' ', prop_text).strip()
                     
                 if "impact" in lower_text:
-                    current_issue["impact"] = prop_text
+                    current_issue["impact"] = clean_prop
                 elif "first identified" in lower_text:
-                    current_issue["first_identified"] = prop_text
+                    current_issue["first_identified"] = clean_prop
                 elif "resolved" in lower_text:
-                    current_issue["resolved"] = prop_text
+                    current_issue["resolved"] = clean_prop
                     current_issue["status"] = "Resolved"
                 elif "updated:" in lower_text:
-                    current_issue["last_updated"] = prop_text
+                    current_issue["last_updated"] = clean_prop
                 continue
                 
             # If it's short, it might be a battery brand
