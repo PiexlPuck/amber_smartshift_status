@@ -1,11 +1,14 @@
 {
   "domain": "amber_smartshift_status",
   "name": "Amber SmartShift Status",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "documentation": "https://github.com/yourusername/amber_smartshift_status",
   "dependencies": [],
   "codeowners": [],
-  "requirements": ["beautifulsoup4==4.12.3", "cloudscraper==1.2.71"],
+  "requirements": [
+    "beautifulsoup4==4.12.3",
+    "cloudscraper==1.2.71"
+  ],
   "iot_class": "cloud_polling",
   "config_flow": true
 }

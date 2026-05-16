@@ -49,6 +49,7 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
         data = {}
         current_battery = None
         current_issue = None
+        in_resolved_section = False
         
         # We look for all tags that might contain the structured data.
         # It seems 'strong' tags contain headings like "Tesla", "Overview of Issue:", etc.
@@ -69,9 +70,13 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
                 
             lower_text = text.lower()
             
-            # Break early if we hit the resolved or archived sections (only if it's a heading)
-            if element.name in ['h1', 'h2', 'h3'] and ("resolved issues" in lower_text or "archived issues" in lower_text):
-                break
+            # Break early if we hit the archived sections (only if it's a heading)
+            if element.name in ['h1', 'h2', 'h3']:
+                if "archived issues" in lower_text:
+                    break
+                if "resolved issues" in lower_text:
+                    in_resolved_section = True
+                    continue
             
             # Check for issue fields
             if "overview of issue" in lower_text:
@@ -91,7 +96,7 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
                         
                     import re
                     clean_overview = re.sub(r' +', ' ', issue_text).strip()
-                    current_issue = {"status": "Issue", "overview": clean_overview}
+                    current_issue = {"status": "Resolved" if in_resolved_section else "Issue", "overview": clean_overview}
                     data[current_battery]["issues"].append(current_issue)
                 continue
             elif current_issue and any(k in lower_text for k in ["impact:", "impact", "first identified:", "resolved", "updated:"]):
@@ -140,12 +145,14 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
                     if current_battery not in data:
                         data[current_battery] = {"issues": []}
 
-        # Filter out batteries that don't have active issues, or mark their overall status
+        # Determine active vs resolved issues for each battery
         for battery, info in data.items():
             active_issues = [i for i in info["issues"] if i.get("status") != "Resolved"]
+            resolved_issues = [i for i in info["issues"] if i.get("status") == "Resolved"]
             info["overall_status"] = "Issue" if active_issues else "Healthy"
             info["active_issues"] = active_issues
-
+            info["resolved_issues"] = resolved_issues
+            
         return data
 
     async def async_get_battery_types(self) -> list[str]:
