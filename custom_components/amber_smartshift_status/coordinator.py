@@ -25,20 +25,25 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=SCAN_INTERVAL,
         )
-        self.scraper = cloudscraper.create_scraper()
+        self.scraper = None
+
+    def _fetch_data(self) -> str:
+        """Fetch data synchronously."""
+        if self.scraper is None:
+            self.scraper = cloudscraper.create_scraper()
+        response = self.scraper.get(URL)
+        response.raise_for_status()
+        return response.text
 
     async def _async_update_data(self) -> dict:
         """Fetch data from Amber website."""
         try:
             # Run scraper in executor since it's blocking
-            response = await self.hass.async_add_executor_job(
-                self.scraper.get, URL
-            )
-            response.raise_for_status()
+            html = await self.hass.async_add_executor_job(self._fetch_data)
         except Exception as err:
             raise UpdateFailed(f"Error communicating with Amber Help Center: {err}") from err
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(html, 'html.parser')
         
         # Parse the page
         data = {}
@@ -57,37 +62,59 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
             "update 1", "update 2"
         ]
 
-        for element in soup.find_all(['strong', 'h1', 'h2', 'h3', 'h4', 'p']):
+        for element in soup.find_all(['strong', 'h1', 'h2', 'h3', 'h4']):
             text = element.get_text(separator=' ', strip=True)
             if not text:
                 continue
                 
             lower_text = text.lower()
             
-            # Break early if we hit the resolved or archived sections
-            if "resolved issues" in lower_text or "archived issues" in lower_text:
+            # Break early if we hit the resolved or archived sections (only if it's a heading)
+            if element.name in ['h1', 'h2', 'h3'] and ("resolved issues" in lower_text or "archived issues" in lower_text):
                 break
             
             # Check for issue fields
             if "overview of issue" in lower_text:
                 if current_battery:
-                    current_issue = {"status": "Issue", "overview": text}
+                    # extract the actual text following this strong tag
+                    issue_text = text
+                    sibling = element.next_sibling
+                    while sibling and getattr(sibling, 'name', '') not in ['strong', 'h1', 'h2', 'h3', 'h4']:
+                        if isinstance(sibling, str):
+                            issue_text += " " + sibling.strip()
+                        elif sibling.name not in ['br', 'a']:
+                            issue_text += " " + sibling.get_text(strip=True)
+                        sibling = sibling.next_sibling
+                        
+                    current_issue = {"status": "Issue", "overview": issue_text.strip()}
                     data[current_battery]["issues"].append(current_issue)
                 continue
             elif current_issue and any(k in lower_text for k in ["impact:", "impact", "first identified:", "resolved", "updated:"]):
+                # extract text for these too
+                prop_text = text
+                sibling = element.next_sibling
+                while sibling and getattr(sibling, 'name', '') not in ['strong', 'h1', 'h2', 'h3', 'h4']:
+                    if isinstance(sibling, str):
+                        prop_text += " " + sibling.strip()
+                    elif sibling.name not in ['br', 'a']:
+                        prop_text += " " + sibling.get_text(strip=True)
+                    sibling = sibling.next_sibling
+                    
+                prop_text = prop_text.strip()
+                    
                 if "impact" in lower_text:
-                    current_issue["impact"] = text
+                    current_issue["impact"] = prop_text
                 elif "first identified" in lower_text:
-                    current_issue["first_identified"] = text
+                    current_issue["first_identified"] = prop_text
                 elif "resolved" in lower_text:
-                    current_issue["resolved"] = text
+                    current_issue["resolved"] = prop_text
                     current_issue["status"] = "Resolved"
                 elif "updated:" in lower_text:
-                    current_issue["last_updated"] = text
+                    current_issue["last_updated"] = prop_text
                 continue
                 
             # If it's short, it might be a battery brand
-            if len(text) < 40 and (element.name in ['strong', 'h1', 'h2', 'h3'] or element.find('strong')):
+            if len(text) < 40:
                 # Clean up text
                 clean_text = text.replace('✅', '').replace('⚠️', '')
                 clean_text = clean_text.replace('No live outages', '').replace('BETA', '').strip()
