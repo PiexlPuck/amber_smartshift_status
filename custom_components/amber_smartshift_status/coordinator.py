@@ -49,40 +49,55 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
         # It seems 'strong' tags contain headings like "Tesla", "Overview of Issue:", etc.
         # Or sometimes they are just plain text in paragraphs.
         # Let's iterate over all elements in the body and extract text.
-        for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'li']):
+        # Keywords to ignore as battery names
+        ignore_keywords = [
+            "overview of issue", "impact", "first identified", "resolved", "last updated",
+            "active issues", "resolved issues", "current issues", "archived issues",
+            "about", "join us", "social", "comments", "fleet-wide", "user actions", "update"
+        ]
+
+        for element in soup.find_all(['strong', 'h1', 'h2', 'h3', 'h4', 'p']):
             text = element.get_text(separator=' ', strip=True)
             if not text:
                 continue
                 
-            # Check if this element text looks like a battery brand header
-            # Usually they are just the brand name. We can identify them if they don't contain our keywords
             lower_text = text.lower()
-            if any(keyword in lower_text for keyword in [
-                "overview of issue", "impact:", "first identified:", "resolved:", "last updated:"
-            ]):
+            
+            # Check for issue fields
+            if "overview of issue" in lower_text:
                 if current_battery:
-                    if "overview of issue" in lower_text:
-                        # New issue for this battery
-                        current_issue = {"status": "Issue", "overview": text}
-                        data[current_battery]["issues"].append(current_issue)
-                    elif current_issue:
-                        if "impact:" in lower_text:
-                            current_issue["impact"] = text
-                        elif "first identified:" in lower_text:
-                            current_issue["first_identified"] = text
-                        elif "resolved:" in lower_text or "resolved on:" in lower_text:
-                            current_issue["resolved"] = text
-                            current_issue["status"] = "Resolved"
-                        elif "updated:" in lower_text:
-                            current_issue["last_updated"] = text
-            else:
-                # It might be a battery name if it's short and in a strong or header tag
-                if len(text) < 30 and (element.name.startswith('h') or element.find('strong')):
-                    # Skip common non-battery headers
-                    if text not in ["Active Issues", "Resolved Issues", "SmartShift Status"]:
-                        current_battery = text
-                        if current_battery not in data:
-                            data[current_battery] = {"issues": []}
+                    current_issue = {"status": "Issue", "overview": text}
+                    data[current_battery]["issues"].append(current_issue)
+                continue
+            elif current_issue and any(k in lower_text for k in ["impact:", "impact", "first identified:", "resolved", "updated:"]):
+                if "impact" in lower_text:
+                    current_issue["impact"] = text
+                elif "first identified" in lower_text:
+                    current_issue["first_identified"] = text
+                elif "resolved" in lower_text:
+                    current_issue["resolved"] = text
+                    current_issue["status"] = "Resolved"
+                elif "updated:" in lower_text:
+                    current_issue["last_updated"] = text
+                continue
+                
+            # If it's short, it might be a battery brand
+            if len(text) < 40 and (element.name in ['strong', 'h1', 'h2', 'h3'] or element.find('strong')):
+                # Clean up text
+                clean_text = text.replace('✅', '').replace('⚠️', '')
+                clean_text = clean_text.replace('No live outages', '').replace('BETA', '').strip()
+                
+                if (clean_text and 
+                    clean_text.lower() not in ignore_keywords and 
+                    "limitation" not in clean_text.lower() and 
+                    "resolved on" not in clean_text.lower() and
+                    ":" not in clean_text and
+                    "smartshift" not in clean_text.lower()):
+                    
+                    # Check if we already have it to avoid adding 'Overview of Issue' as a battery if logic fails
+                    current_battery = clean_text
+                    if current_battery not in data:
+                        data[current_battery] = {"issues": []}
 
         # Filter out batteries that don't have active issues, or mark their overall status
         for battery, info in data.items():
