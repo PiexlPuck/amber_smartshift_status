@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import cloudscraper
 from bs4 import BeautifulSoup
@@ -152,7 +152,10 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
             info["overall_status"] = "Issue" if active_issues else "Healthy"
             info["active_issues"] = active_issues
             info["resolved_issues"] = resolved_issues
-            
+
+        # Store last successful check timestamp
+        data["_last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         return data
 
     async def async_get_battery_types(self) -> list[str]:
