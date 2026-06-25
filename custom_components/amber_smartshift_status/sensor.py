@@ -1,6 +1,8 @@
 """Sensor platform for Amber SmartShift Status."""
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -87,7 +89,7 @@ class AmberSmartShiftSensor(CoordinatorEntity[AmberSmartShiftCoordinator], Senso
         return "mdi:check-circle"
 
     @property
-    def extra_state_attributes(self) -> dict[str, any]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         battery_data = _get_battery_data(self.coordinator, self.battery_type)
         attributes = {"battery_type": self.battery_type}
 
@@ -95,10 +97,16 @@ class AmberSmartShiftSensor(CoordinatorEntity[AmberSmartShiftCoordinator], Senso
             attributes["active_issues"] = battery_data.get("active_issues", [])
             attributes["active_issue_count"] = len(battery_data.get("active_issues", []))
             if battery_data.get("active_issues"):
-                first_issue = battery_data["active_issues"][0]
-                attributes["current_issue_overview"] = first_issue.get("overview")
-                attributes["current_issue_impact"] = first_issue.get("impact")
-                attributes["current_issue_identified"] = first_issue.get("first_identified")
+                active_issues = battery_data["active_issues"]
+                attributes["current_issue_overview"] = "\n\n".join(
+                    [str(issue.get("overview", "")) for issue in active_issues]
+                )
+                attributes["current_issue_impact"] = "\n\n".join(
+                    [str(issue.get("impact", "")) for issue in active_issues if issue.get("impact")]
+                )
+                attributes["current_issue_identified"] = " / ".join(
+                    [str(issue.get("first_identified", "")) for issue in active_issues]
+                )
 
         return attributes
 
@@ -124,7 +132,9 @@ class AmberSmartShiftFirstReportedSensor(CoordinatorEntity[AmberSmartShiftCoordi
     def native_value(self) -> str | None:
         battery_data = _get_battery_data(self.coordinator, self.battery_type)
         if battery_data and battery_data.get("active_issues"):
-            return battery_data["active_issues"][0].get("first_identified", "Not provided")
+            active_issues = battery_data["active_issues"]
+            dates = [str(issue.get("first_identified", "Not provided")) for issue in active_issues]
+            return " / ".join(dates)
         return "No issues reported"
 
 
@@ -149,7 +159,9 @@ class AmberSmartShiftLastUpdatedSensor(CoordinatorEntity[AmberSmartShiftCoordina
     def native_value(self) -> str | None:
         battery_data = _get_battery_data(self.coordinator, self.battery_type)
         if battery_data and battery_data.get("active_issues"):
-            return battery_data["active_issues"][0].get("last_updated", "Not provided")
+            active_issues = battery_data["active_issues"]
+            dates = [str(issue.get("last_updated", "Not provided")) for issue in active_issues]
+            return " / ".join(dates)
         return "No issues reported"
 
 
@@ -215,23 +227,29 @@ class AmberSmartShiftMessageSensor(CoordinatorEntity[AmberSmartShiftCoordinator]
     @property
     def native_value(self) -> str | None:
         battery_data = _get_battery_data(self.coordinator, self.battery_type)
-        if battery_data and battery_data.get("active_issues"):
-            overview = battery_data["active_issues"][0].get("overview", "")
-            # HA sensor states are capped at 255 chars; full text is in attributes
-            if len(overview) > 255:
-                return overview[:252] + "..."
-            return overview
+        active_issues = battery_data.get("active_issues") if battery_data else None
+        if active_issues:
+            # Join all active issues overviews, separated by two newlines
+            overviews = [str(issue.get("overview", "Active issue reported")) for issue in active_issues]
+            overview_text = "\n\n".join(overviews)
+            if len(overview_text) > 255:
+                return overview_text[:252] + "..."
+            return overview_text
         return "No active issues"
 
     @property
-    def extra_state_attributes(self) -> dict[str, any]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Expose full untruncated overview in attributes for dashboard use."""
         battery_data = _get_battery_data(self.coordinator, self.battery_type)
         if battery_data and battery_data.get("active_issues"):
-            issue = battery_data["active_issues"][0]
+            active_issues = battery_data["active_issues"]
             return {
-                "full_overview": issue.get("overview", ""),
-                "impact": issue.get("impact", ""),
+                "full_overview": "\n\n".join(
+                    [str(issue.get("overview", "")) for issue in active_issues]
+                ),
+                "impact": "\n\n".join(
+                    [str(issue.get("impact", "")) for issue in active_issues if issue.get("impact")]
+                ),
             }
         return {}
 

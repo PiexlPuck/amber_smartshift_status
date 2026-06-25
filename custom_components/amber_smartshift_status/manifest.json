@@ -1,7 +1,7 @@
 {
   "domain": "amber_smartshift_status",
   "name": "Amber SmartShift Status",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "documentation": "https://github.com/yourusername/amber_smartshift_status",
   "dependencies": [],
   "codeowners": [],
