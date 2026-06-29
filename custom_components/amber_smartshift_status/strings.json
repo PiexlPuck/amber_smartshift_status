@@ -11,6 +11,7 @@
     },
     "error": {
       "cannot_connect": "Failed to connect to Amber website, using default list.",
+      "select_battery": "Please select a battery brand.",
       "unknown": "Unexpected error"
     },
     "abort": {

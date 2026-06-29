@@ -161,4 +161,4 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
     async def async_get_battery_types(self) -> list[str]:
         """Fetch the available battery types for the config flow."""
         data = await self._async_update_data()
-        return list(data.keys())
+        return [k for k in data.keys() if not k.startswith("_")]

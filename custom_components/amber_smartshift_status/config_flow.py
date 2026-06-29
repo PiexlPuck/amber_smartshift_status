@@ -40,24 +40,32 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Failed to fetch battery types from Amber website")
                 errors["base"] = "cannot_connect"
                 # Fallback to some known ones if website is down
-                self.battery_types = ["Tesla", "AlphaESS", "Sungrow", "SolarEdge", "Redback", "Sigenergy", "Fronius", "1KOMMA5°", "Neovolt", "FoxESS", "Enphase"]
+                self.battery_types = ["Tesla", "AlphaESS", "Sungrow", "SolarEdge", "Redback", "Sigenergy", "Fronius", "1KOMMA5°", "Neovolt", "FoxESS", "Enphase", "Anker", "GivEnergy"]
 
         if user_input is not None:
-            # Check if we already have this battery type configured
-            await self.async_set_unique_id(user_input[CONF_BATTERY_TYPE])
-            self._abort_if_unique_id_configured()
+            if not user_input[CONF_BATTERY_TYPE]:
+                errors["base"] = "select_battery"
+            else:
+                # Check if we already have this battery type configured
+                await self.async_set_unique_id(user_input[CONF_BATTERY_TYPE])
+                self._abort_if_unique_id_configured()
 
-            title = f"Amber SmartShift - {user_input[CONF_BATTERY_TYPE]}"
-            return self.async_create_entry(title=title, data=user_input)
+                title = f"Amber SmartShift - {user_input[CONF_BATTERY_TYPE]}"
+                return self.async_create_entry(title=title, data=user_input)
 
         # Remove duplicates and sort
         battery_types = sorted(list(set(self.battery_types)))
 
+        # Format options to show a friendly select prompt at the top
+        options = [{"value": "", "label": "Please select a battery..."}] + [
+            {"value": b, "label": b} for b in battery_types
+        ]
+
         schema = vol.Schema(
             {
-                vol.Required(CONF_BATTERY_TYPE): SelectSelector(
+                vol.Required(CONF_BATTERY_TYPE, default=""): SelectSelector(
                     SelectSelectorConfig(
-                        options=battery_types,
+                        options=options,
                         mode=SelectSelectorMode.DROPDOWN,
                     )
                 ),

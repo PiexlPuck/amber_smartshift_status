@@ -5,9 +5,14 @@ A custom component for Home Assistant that scrapes the [Amber SmartShift Status 
 ## Features
 - Bypasses Cloudflare protection using `cloudscraper`.
 - Provides a Config Flow so you can select your specific battery brand from the Home Assistant UI.
-- Updates every 15 minutes.
-- Sensor state shows `Healthy` or `Issue`.
-- Sensor attributes contain detailed information regarding the active issue, impact, and when it was identified.
+- Updates every 30 minutes.
+- Provides 6 sensors for comprehensive status tracking:
+  - **Status**: Indicates the overall health (`Healthy` or `Issue`).
+  - **First Reported**: Displays when the active issue was first identified (multiple issues are separated by ` / `).
+  - **Last Updated**: Shows when the active issue description was last updated (multiple issues are separated by ` / `).
+  - **Date Resolved**: Displays the resolution date/time for the most recently resolved issue.
+  - **Error Details**: Shows a summary of the active issue details (multiple issues are separated by two newlines).
+  - **Last Polled**: Indicates the timestamp of the last successful scrape from the Amber Status page.
 
 ## Installation
 
