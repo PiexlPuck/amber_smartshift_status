@@ -43,8 +43,13 @@ class AmberSmartShiftHelpButton(ButtonEntity):
         """Handle the button press."""
         url = "https://help.amber.com.au/hc/en-us/articles/35922375367181-SmartShift-Status"
         # Since backend cannot open user client browsers, create a persistent notification with the link
-        self.hass.components.persistent_notification.async_create(
-            title="Amber SmartShift Status Page",
-            message=f"[Click here to view progress and status on the Amber website]({url})",
-            notification_id="amber_smartshift_status_launch",
+        await self.hass.services.async_call(
+            "persistent_notification",
+            "create",
+            {
+                "title": "Amber SmartShift Status Page",
+                "message": f"[Click here to view progress and status on the Amber website]({url})",
+                "notification_id": "amber_smartshift_status_launch",
+            },
         )
+
