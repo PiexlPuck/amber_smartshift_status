@@ -58,7 +58,7 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
         # Keywords to ignore as battery names
         ignore_keywords = [
             "overview of issue", "impact", "first identified", "resolved", "last updated",
-            "active issues", "current issues", "archived issues",
+            "active issues", "current issues", "resolved issues", "archived issues",
             "about", "join us", "social", "comments", "user actions", "update",
             "update 1", "update 2"
         ]
@@ -142,6 +142,7 @@ class AmberSmartShiftCoordinator(DataUpdateCoordinator):
                     
                     # Check if we already have it to avoid adding 'Overview of Issue' as a battery if logic fails
                     current_battery = clean_text
+                    current_issue = None
                     if current_battery not in data:
                         data[current_battery] = {"issues": []}
 
