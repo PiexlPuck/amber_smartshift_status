@@ -8,7 +8,7 @@ from homeassistant.const import Platform
 from .const import DOMAIN
 from .coordinator import AmberSmartShiftCoordinator
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BUTTON]
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

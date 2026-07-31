@@ -43,6 +43,19 @@ def _get_battery_data(coordinator, battery_type) -> dict | None:
     return coordinator.data.get(battery_type)
 
 
+def _get_device_info(entry_id: str, battery_type: str) -> dict[str, Any]:
+    """Get device info for Amber SmartShift Status entities."""
+    info = {
+        "identifiers": {(DOMAIN, entry_id)},
+        "name": f"Amber SmartShift - {battery_type}",
+        "manufacturer": "Amber Electric",
+        "model": battery_type,
+    }
+    if battery_type == "Fleet-wide":
+        info["configuration_url"] = "https://help.amber.com.au/hc/en-us/articles/35922375367181-SmartShift-Status"
+    return info
+
+
 class AmberSmartShiftSensor(CoordinatorEntity[AmberSmartShiftCoordinator], SensorEntity):
     """Representation of the main Amber SmartShift Status Sensor.
 
@@ -62,12 +75,7 @@ class AmberSmartShiftSensor(CoordinatorEntity[AmberSmartShiftCoordinator], Senso
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_status"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry_id)},
-            "name": f"Amber SmartShift - {battery_type}",
-            "manufacturer": "Amber Electric",
-            "model": battery_type,
-        }
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def available(self) -> bool:
@@ -122,7 +130,7 @@ class AmberSmartShiftFirstReportedSensor(CoordinatorEntity[AmberSmartShiftCoordi
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_first_reported"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def available(self) -> bool:
@@ -149,7 +157,7 @@ class AmberSmartShiftLastUpdatedSensor(CoordinatorEntity[AmberSmartShiftCoordina
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_last_updated"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def available(self) -> bool:
@@ -176,7 +184,7 @@ class AmberSmartShiftDateResolvedSensor(CoordinatorEntity[AmberSmartShiftCoordin
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_date_resolved"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def available(self) -> bool:
@@ -213,12 +221,7 @@ class AmberSmartShiftMessageSensor(CoordinatorEntity[AmberSmartShiftCoordinator]
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_error_details"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry_id)},
-            "name": f"Amber SmartShift - {battery_type}",
-            "manufacturer": "Amber Electric",
-            "model": battery_type,
-        }
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def available(self) -> bool:
@@ -265,7 +268,7 @@ class AmberSmartShiftLastPolledSensor(CoordinatorEntity[AmberSmartShiftCoordinat
         super().__init__(coordinator)
         self.battery_type = battery_type
         self._attr_unique_id = f"{entry_id}_{battery_type}_last_polled"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+        self._attr_device_info = _get_device_info(entry_id, battery_type)
 
     @property
     def native_value(self) -> str | None:
