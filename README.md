@@ -16,15 +16,15 @@ A custom component for Home Assistant that scrapes the [Amber SmartShift Status 
 
 ## Installation
 
-### HACS (Home Assistant Community Store)
-1. Open HACS in your Home Assistant instance.
+### Marketplace (Home Assistant 2026.11+) / HACS
+1. Open **Settings** > **Marketplace** (or **HACS** on older Home Assistant versions).
 2. Click on the 3 dots in the top right corner and select **Custom repositories**.
-3. Add the URL to this repository and select **Integration** as the category.
+3. Add `https://github.com/PiexlPuck/amber_smartshift_status` and select **Integration** as the category.
 4. Click **Add**.
-5. Once added, you can find "Amber SmartShift Status" in HACS and click **Download**.
+5. Search for **Amber SmartShift Status** and click **Download**.
 6. Restart Home Assistant.
-7. Go to **Settings** > **Devices & Services** > **Add Integration** and search for "Amber SmartShift Status".
-8. Follow the prompts to select your battery type.
+7. Go to **Settings** > **Devices & Services** > **Add Integration** and search for **Amber SmartShift Status**.
+8. Follow the prompts to select your battery type (or `Fleet-wide`).
 
 ### Manual Installation
 1. Download the repository.

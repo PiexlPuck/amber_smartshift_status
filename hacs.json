@@ -1,8 +1,8 @@
 {
   "name": "Amber SmartShift Status",
   "render_readme": true,
-  "iot_class": "cloud_polling",
   "content_in_root": false,
-  "homeassistant": "2024.1.0",
-  "filename": "amber_smartshift_status.zip"
+  "homeassistant": "2026.11.0"
 }
+
+
